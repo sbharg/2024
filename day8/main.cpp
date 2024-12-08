@@ -21,22 +21,6 @@ inline std::string& trim(std::string& s, const char* t = " \t\n\r\f\v") {
 using ll = int64_t;
 using data_t = vector<vector<char>>;
 
-data_t parse(const string& filenme) {
-    ifstream file(filenme);
-    string line;
-    
-    data_t data;
-    while (getline(file, line)) {
-        line = trim(line);
-        vector<char> row;
-        for (const char& c : line) {
-            row.push_back(c);
-        }
-        data.push_back(row);
-    }
-    return data;
-}
-
 void print_board(const data_t& info, const vector<pair<int, int>>& antinodes) {
     vector<vector<string>> board;
     for (const auto& row : info) {
@@ -61,7 +45,8 @@ void print_board(const data_t& info, const vector<pair<int, int>>& antinodes) {
     }
 }
 
-int part1(const data_t& info, const int n, const int m, const unordered_map<char, vector<pair<int, int>>>& antennas) { 
+int part1(const data_t& data, const unordered_map<char, vector<pair<int, int>>>& antennas) { 
+    int n = data.size(), m = data[0].size();
     auto hash = [](const std::pair<int, int>& p){ return p.first * 31 + p.second; };
     auto valid_pos = [](const pair<int, int>& p, int n, int m) {
         return p.first >= 0 && p.first < n && p.second >= 0 && p.second < m;
@@ -72,14 +57,11 @@ int part1(const data_t& info, const int n, const int m, const unordered_map<char
         if (positions.size() < 2) { continue; }
         for (size_t i = 0; i < positions.size(); i++) {
             for (size_t j = i+1; j < positions.size(); j++) {
-                int vert = abs(positions[i].first - positions[j].first);
-                int horz = abs(positions[i].second - positions[j].second);
-
-                pair<int, int> antenna1 = max(positions[i], positions[j], [](const pair<int, int>& a, const pair<int, int>& b) {
-                    return a.second < b.second;
-                });
+                pair<int, int> antenna1 = (positions[i].second > positions[j].second) ? positions[i] : positions[j];
                 pair<int, int> antenna2 = (antenna1 == positions[i]) ? positions[j] : positions[i];
+
                 float slope = (antenna2.first - antenna1.first) / static_cast<float>(antenna1.second - antenna2.second);
+                int vert = abs(antenna1.first - antenna2.first), horz = abs(antenna1.second - antenna2.second);
 
                 pair<int, int> antinode1 = antenna1, antinode2 = antenna2;
 
@@ -95,11 +77,12 @@ int part1(const data_t& info, const int n, const int m, const unordered_map<char
     }
     
     // vector<pair<int, int>> antinodes_v(antinodes.begin(), antinodes.end());
-    // print_board(info, antinodes_v);
+    // print_board(data, antinodes_v);
     return antinodes.size();
 }
 
-int part2(const data_t& info, const int n, const int m, const unordered_map<char, vector<pair<int, int>>>& antennas) {
+int part2(const data_t& data, const unordered_map<char, vector<pair<int, int>>>& antennas) {
+    int n = data.size(), m = data[0].size();
     auto hash = [](const std::pair<int, int>& p){ return p.first * 31 + p.second; };
     auto valid_pos = [](const pair<int, int>& p, int n, int m) {
         return p.first >= 0 && p.first < n && p.second >= 0 && p.second < m;
@@ -110,16 +93,14 @@ int part2(const data_t& info, const int n, const int m, const unordered_map<char
         if (positions.size() < 2) { continue; }
         for (size_t i = 0; i < positions.size(); i++) {
             for (size_t j = i+1; j < positions.size(); j++) {
-                int vert = abs(positions[i].first - positions[j].first);
-                int horz = abs(positions[i].second - positions[j].second);
-
-                pair<int, int> antenna1 = max(positions[i], positions[j], [](const pair<int, int>& a, const pair<int, int>& b) {
-                    return a.second < b.second;
-                });
+                pair<int, int> antenna1 = (positions[i].second > positions[j].second) ? positions[i] : positions[j];
                 pair<int, int> antenna2 = (antenna1 == positions[i]) ? positions[j] : positions[i];
+
                 float slope = (antenna2.first - antenna1.first) / static_cast<float>(antenna1.second - antenna2.second);
+                int vert = abs(antenna1.first - antenna2.first), horz = abs(antenna1.second - antenna2.second);
 
                 pair<int, int> antinode1 = antenna1, antinode2 = antenna2;
+
                 while (valid_pos(antinode1, n, m)) {
                     antinodes.insert(antinode1);
                     antinode1.first += (slope >= 0.0) ? -vert : vert;
@@ -134,9 +115,25 @@ int part2(const data_t& info, const int n, const int m, const unordered_map<char
         }
     }
     
-    vector<pair<int, int>> antinodes_v(antinodes.begin(), antinodes.end());
-    print_board(info, antinodes_v);
+    // vector<pair<int, int>> antinodes_v(antinodes.begin(), antinodes.end());
+    // print_board(data, antinodes_v);
     return antinodes.size();
+}
+
+data_t parse(const string& filenme) {
+    ifstream file(filenme);
+    string line;
+    
+    data_t data;
+    while (getline(file, line)) {
+        line = trim(line);
+        vector<char> row;
+        for (const char& c : line) {
+            row.push_back(c);
+        }
+        data.push_back(row);
+    }
+    return data;
 }
 
 int main(int argc, char** argv) {
@@ -152,8 +149,8 @@ int main(int argc, char** argv) {
         }
     }
 
-    int part1_ans = part1(data, n, m, antennas);
-    int part2_ans = part2(data, n, m, antennas);
+    int part1_ans = part1(data, antennas);
+    int part2_ans = part2(data, antennas);
     cout << "[Part 1]: " << part1_ans << endl;
     cout << "[Part 2]: " << part2_ans << endl;
     return 0;
